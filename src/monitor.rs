@@ -73,6 +73,7 @@ static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
         .timeout(Duration::from_secs(10))
         .danger_accept_invalid_certs(true) // Allow self-signed certs for monitoring flexibility
         .no_gzip() // We only care about headers/status mostly
+        .user_agent("NetWatch/0.3.0")
         .build()
         .expect("Failed to build HTTP client")
 });
