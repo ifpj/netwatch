@@ -9,9 +9,46 @@ use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tokio::sync::{mpsc, watch};
 use web::AppState;
+use std::env;
 
 #[tokio::main]
 async fn main() {
+    // Parse command line arguments
+    let args: Vec<String> = env::args().collect();
+    let mut config_path = "config.json".to_string();
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "-d" => {
+                if i + 1 < args.len() {
+                    let dir = &args[i + 1];
+                    if let Err(e) = env::set_current_dir(dir) {
+                        eprintln!("Failed to change directory to {}: {}", dir, e);
+                        std::process::exit(1);
+                    }
+                    i += 1;
+                } else {
+                    eprintln!("Missing argument for -d");
+                    std::process::exit(1);
+                }
+            }
+            "-c" => {
+                if i + 1 < args.len() {
+                    config_path = args[i + 1].clone();
+                    i += 1;
+                } else {
+                    eprintln!("Missing argument for -c");
+                    std::process::exit(1);
+                }
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+
+    // Initialize config path
+    config::init_config_path(config_path);
+
     // Initialize logging
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
@@ -99,7 +136,7 @@ fn save_cache(state: &DashMap<String, model::MonitorStatus>) {
     match serde_json::to_string(&items) {
         Ok(json) => {
             if let Err(e) = std::fs::write(CACHE_FILE, json) {
-                tracing::error!("Failed to write cache file: {}", e);
+                 tracing::error!("Failed to write cache file: {}", e);
             }
         }
         Err(e) => tracing::error!("Failed to serialize cache: {}", e),
@@ -112,21 +149,20 @@ fn load_cache(state: &DashMap<String, model::MonitorStatus>) {
     }
     tracing::info!("Loading monitor cache from {}", CACHE_FILE);
     match std::fs::read_to_string(CACHE_FILE) {
-        Ok(json) => {
-            match serde_json::from_str::<Vec<model::MonitorStatus>>(&json) {
+        Ok(content) => {
+             match serde_json::from_str::<Vec<model::MonitorStatus>>(&content) {
                 Ok(items) => {
                     for item in items {
-                        // 只恢复已存在的 target 的历史记录
-                        if let Some(mut entry) = state.get_mut(&item.target.id) {
-                            entry.value_mut().records = item.records;
-                            // 也可以选择恢复 current_state，但 config 加载时已经从 config.json 恢复了 last_known_state
-                            // 所以这里主要目的是恢复 records 历史曲线
-                        }
+                         // 我们只恢复 targets 列表中存在的 target 的状态
+                         if let Some(mut existing) = state.get_mut(&item.target.id) {
+                             existing.records = item.records;
+                             existing.current_state = item.current_state;
+                             tracing::info!("Restored cache for target: {}", item.target.name);
+                         }
                     }
-                    tracing::info!("Cache loaded successfully");
                 }
-                Err(e) => tracing::error!("Failed to deserialize cache: {}", e),
-            }
+                Err(e) => tracing::error!("Failed to parse cache file: {}", e),
+             }
         }
         Err(e) => tracing::error!("Failed to read cache file: {}", e),
     }
@@ -157,4 +193,5 @@ async fn shutdown_signal(state: Arc<DashMap<String, model::MonitorStatus>>) {
 
     tracing::info!("Shutdown signal received, saving cache...");
     save_cache(&state);
+    tracing::info!("Goodbye!");
 }
