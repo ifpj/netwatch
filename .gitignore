@@ -1,0 +1,4 @@
+/target
+*.json
+*.bak
+.DS_Store

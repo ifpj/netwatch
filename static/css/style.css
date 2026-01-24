@@ -1,0 +1,137 @@
+:root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-hover: #334155;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #334155;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #eab308;
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 0; margin: 0; background: var(--bg); color: var(--text); min-height: 100vh; }
+.container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+/* Header */
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+h1 { margin: 0; font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.live-indicator { display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); }
+
+/* Header Controls */
+.header-controls { display: flex; align-items: center; gap: 16px; }
+
+/* Time Range Selector */
+.time-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+.time-select:focus { outline: none; border-color: var(--primary); }
+
+/* Config Button */
+.config-btn {
+    background: none; border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+}
+.config-btn:hover, .config-btn.active { background: var(--surface); color: var(--text); }
+.config-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+/* Dashboard Cards */
+.monitor-list { display: flex; flex-direction: column; gap: 16px; }
+.monitor-card { background: var(--surface); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border); }
+
+.m-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.m-info { display: flex; align-items: baseline; gap: 12px; }
+.m-name { font-weight: 600; font-size: 1rem; }
+.m-target { color: var(--text-muted); font-size: 0.875rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.m-meta { color: var(--text-muted); font-size: 0.8rem; }
+.m-status { font-size: 0.875rem; display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+.status-dot.up { background: var(--success); box-shadow: 0 0 5px var(--success); }
+.status-dot.down { background: var(--danger); box-shadow: 0 0 5px var(--danger); }
+
+/* Status Bar */
+.status-bar { display: flex; gap: 3px; height: 32px; align-items: flex-end; }
+.bar-segment { flex: 1; background: #334155; border-radius: 2px; height: 100%; min-width: 2px; transition: all 0.2s; position: relative; }
+.bar-segment.ok { background: var(--success); }
+.bar-segment.fail { background: var(--danger); }
+.bar-segment.warning { background: var(--warning); }
+.bar-segment.empty { background: transparent; border: 1px dashed #334155; opacity: 0.3; }
+
+.bar-segment:hover { transform: scaleY(1.2); z-index: 10; filter: brightness(1.2); }
+
+/* Tooltip */
+.bar-segment:hover::after {
+    content: attr(data-title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: pre;
+    pointer-events: none;
+    margin-bottom: 6px;
+    z-index: 20;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Event Log */
+.event-log-container {
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+}
+.event-log-header { font-weight: 600; font-size: 1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.event-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.event-table th { text-align: left; color: var(--text-muted); padding: 8px; border-bottom: 1px solid var(--border); font-weight: 500; font-size: 0.8rem; }
+.event-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.event-table tr:last-child td { border-bottom: none; }
+
+.event-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; min-width: 40px; text-align: center; }
+.event-badge.up { background: rgba(34, 197, 94, 0.1); color: var(--success); }
+.event-badge.down { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+.event-target { font-weight: 500; }
+.event-msg { color: var(--text-muted); }
+.event-time { color: var(--text-muted); font-family: monospace; white-space: nowrap; }
+
+/* Forms & Settings */
+.card { background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; color: var(--text-muted); font-size: 0.8rem; padding: 12px; border-bottom: 1px solid var(--border); }
+td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+
+input, select, textarea { 
+    background: #0f172a; border: 1px solid var(--border); color: var(--text); 
+    padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box; font-size: 0.9rem;
+}
+input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; font-size: 0.875rem; transition: all 0.2s; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-danger { background: var(--surface); border: 1px solid var(--danger); color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: white; }
+.btn-secondary { background: var(--surface-hover); color: var(--text); }
+.btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+
+.hidden { display: none; }
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-muted { color: var(--text-muted); }
