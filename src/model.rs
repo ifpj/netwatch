@@ -9,6 +9,8 @@ pub enum Protocol {
     Tcp,
     Icmp,
     Dns,
+    Http,
+    Https,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

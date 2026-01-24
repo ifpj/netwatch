@@ -66,6 +66,48 @@ impl Probe for IcmpProbe {
 
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts, NameServerConfig, Protocol as DnsProtocol};
 use std::net::SocketAddr;
+use once_cell::sync::Lazy;
+
+static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
+    reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .danger_accept_invalid_certs(true) // Allow self-signed certs for monitoring flexibility
+        .no_gzip() // We only care about headers/status mostly
+        .build()
+        .expect("Failed to build HTTP client")
+});
+
+struct HttpProbe;
+#[async_trait::async_trait]
+impl Probe for HttpProbe {
+    async fn probe(&self, target: &Target) -> (bool, Option<f32>, Option<String>) {
+        let protocol = match target.protocol {
+            Protocol::Https => "https",
+            _ => "http",
+        };
+        
+        let host = if target.host.contains("://") {
+            target.host.clone()
+        } else {
+            let port_str = target.port.map(|p| format!(":{}", p)).unwrap_or_default();
+            format!("{}://{}{}", protocol, target.host, port_str)
+        };
+
+        let start = Instant::now();
+        match HTTP_CLIENT.get(&host).send().await {
+            Ok(res) => {
+                let duration = start.elapsed().as_micros() as f32 / 1000.0;
+                let status = res.status();
+                if status.is_success() {
+                    (true, Some(duration), Some(format!("Status: {}", status)))
+                } else {
+                    (false, None, Some(format!("HTTP Error: {}", status)))
+                }
+            },
+            Err(e) => (false, None, Some(e.to_string())),
+        }
+    }
+}
 
 struct DnsProbe;
 #[async_trait::async_trait]
@@ -234,6 +276,7 @@ async fn probe_target(
         Protocol::Tcp => Box::new(TcpProbe),
         Protocol::Icmp => Box::new(IcmpProbe),
         Protocol::Dns => Box::new(DnsProbe),
+        Protocol::Http | Protocol::Https => Box::new(HttpProbe),
     };
 
     let (success, latency, message) = probe_impl.probe(&target).await;
