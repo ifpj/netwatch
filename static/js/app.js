@@ -299,7 +299,7 @@ function addConfigRow(target) {
     const row = document.createElement('tr');
     row.className = 'target-row';
     
-    const protoOptions = ['TCP', 'ICMP', 'DNS'].map(p => 
+    const protoOptions = ['TCP', 'ICMP', 'DNS', 'HTTP', 'HTTPS'].map(p => 
         `<option value="${p}" ${target.protocol === p ? 'selected' : ''}>${p}</option>`
     ).join('');
 
@@ -330,6 +330,12 @@ function updateRowState(row) {
     } else if (proto === 'DNS') {
         portInput.disabled = false;
         if (!portInput.value) portInput.value = 53;
+    } else if (proto === 'HTTP') {
+        portInput.disabled = false;
+        portInput.placeholder = '80';
+    } else if (proto === 'HTTPS') {
+        portInput.disabled = false;
+        portInput.placeholder = '443';
     } else { // TCP
         portInput.disabled = false;
         if (!portInput.value) portInput.value = 80;
