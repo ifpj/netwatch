@@ -3,6 +3,13 @@ let updateInterval = null;
 let isSettingsOpen = false;
 let retentionDays = 3; // Default
 
+const DEFAULT_PORTS = {
+    'TCP': 22,
+    'DNS': 53,
+    'HTTP': 80,
+    'HTTPS': 443
+};
+
 // Init config first to get retention days
 async function init() {
     await loadConfig(false); // Load config silently
@@ -286,11 +293,10 @@ function renderConfigForm() {
 function addTargetRow() {
     addConfigRow({
         id: 't_' + Date.now(),
-        name: 'New Target',
+        name: 'SSH',
         host: 'localhost',
-        port: 80,
-        protocol: 'TCP',
-        dns_query_type: 'A'
+        port: 22,
+        protocol: 'TCP'
     });
 }
 
@@ -307,7 +313,7 @@ function addConfigRow(target) {
         <input type="hidden" class="c-id" value="${target.id}">
         <td><input type="text" class="c-name" value="${target.name}"></td>
         <td>
-            <select class="c-proto" onchange="updateRowState(this.closest('tr'))">
+            <select class="c-proto" onchange="updateRowState(this.closest('tr'), true)">
                 ${protoOptions}
             </select>
         </td>
@@ -319,7 +325,7 @@ function addConfigRow(target) {
     updateRowState(row);
 }
 
-function updateRowState(row) {
+function updateRowState(row, fromUserChange = false) {
     const proto = row.querySelector('.c-proto').value;
     const portInput = row.querySelector('.c-port');
 
@@ -327,18 +333,13 @@ function updateRowState(row) {
         portInput.disabled = true;
         portInput.value = '';
         portInput.placeholder = 'N/A';
-    } else if (proto === 'DNS') {
+    } else {
         portInput.disabled = false;
-        if (!portInput.value) portInput.value = 53;
-    } else if (proto === 'HTTP') {
-        portInput.disabled = false;
-        portInput.placeholder = '80';
-    } else if (proto === 'HTTPS') {
-        portInput.disabled = false;
-        portInput.placeholder = '443';
-    } else { // TCP
-        portInput.disabled = false;
-        if (!portInput.value) portInput.value = 80;
+        const defPort = DEFAULT_PORTS[proto];
+        portInput.placeholder = defPort;
+        if (fromUserChange) {
+            portInput.value = defPort;
+        }
     }
 }
 
@@ -350,9 +351,15 @@ function addWebhookRow(webhook) {
     
     // Default values
     const id = webhook?.id || 'w_' + Date.now();
-    const name = webhook?.name || 'New Webhook';
-    const url = webhook?.url || '';
-    const tmpl = webhook?.template || '';
+    
+    // Defaults for new rows (Telegram)
+    const defName = 'Telegram';
+    const defUrl = "https://api.telegram.org/bot<your_bot_token>/sendMessage";
+    const defTmpl = '{"chat_id":"<your_chat_id>","text":"{{STATUS}} {{TARGET}} {{HOST}} {{TIME}} {{MESSAGE}}"}';
+
+    const name = webhook ? (webhook.name || '') : defName;
+    const url = webhook ? (webhook.url || '') : defUrl;
+    const tmpl = webhook ? (webhook.template || '') : defTmpl;
     const enabled = webhook?.enabled !== undefined ? webhook.enabled : true;
 
     row.innerHTML = `
@@ -361,8 +368,8 @@ function addWebhookRow(webhook) {
         <td><input type="text" class="w-name" value="${name}" placeholder="Name"></td>
         <td>
             <div style="display:flex; flex-direction:column; gap:4px;">
-                <input type="text" class="w-url" value="${url}" placeholder="https://...">
-                <textarea class="w-template" placeholder='Optional Template JSON...' style="min-height:40px; font-family:monospace; font-size:0.8rem;">${tmpl}</textarea>
+                <input type="text" class="w-url" value="${url}" placeholder="https://..." style="width: 100%; box-sizing: border-box;">
+                <textarea class="w-template" placeholder='Optional Template JSON...' style="height: 40px; font-family:monospace; font-size:0.8rem; width: 100%; box-sizing: border-box; resize: none; white-space: nowrap; overflow: hidden;">${tmpl}</textarea>
             </div>
         </td>
         <td style="vertical-align:top;"><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Delete</button></td>
@@ -375,9 +382,14 @@ async function saveConfig() {
     const targets = [];
     document.querySelectorAll('#config-targets-body tr').forEach(row => {
         const proto = row.querySelector('.c-proto').value;
-        let port = parseInt(row.querySelector('.c-port').value);
+        let portVal = row.querySelector('.c-port').value;
+        let port = parseInt(portVal);
 
-        if (proto === 'ICMP') { port = null; } 
+        if (proto === 'ICMP') { 
+            port = null; 
+        } else if (isNaN(port)) {
+            if (DEFAULT_PORTS[proto]) port = DEFAULT_PORTS[proto];
+        }
 
         targets.push({
             id: row.querySelector('.c-id').value,
