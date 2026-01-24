@@ -162,7 +162,18 @@ function renderDashboard(data) {
         const uptime = totalRecs > 0 ? ((totalSuccess / totalRecs) * 100).toFixed(1) : '0.0';
         
         const protocol = item.target.protocol;
-        const targetStr = protocol === 'ICMP' ? item.target.host : `${item.target.host}:${item.target.port || '?'}`;
+        let targetStr = '';
+        if (protocol === 'ICMP') {
+            targetStr = item.target.host;
+        } else if (protocol === 'HTTP' || protocol === 'HTTPS') {
+            // For Web, showing the host is usually enough, or host:port if non-standard
+            targetStr = item.target.host;
+            if (item.target.port) {
+                targetStr += `:${item.target.port}`;
+            }
+        } else {
+            targetStr = `${item.target.host}:${item.target.port || '?'}`;
+        }
         
         const barsHtml = barsData.map(b => {
             if (b.type === 'empty') return `<div class="bar-segment empty"></div>`;
