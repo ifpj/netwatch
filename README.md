@@ -18,10 +18,10 @@
 ### 2. Web 服务模块 (`web.rs` & Frontend)
 - **Axum Server**: 提供 HTTP API 和静态文件服务（嵌入式静态资源）。
 - **API**:
-    - `GET /api/status`: 获取当前所有监控目标的状态。
+    - `GET /api/events`: SSE 实时事件流（初始状态 + 实时更新）。
     - `GET /api/config`: 获取当前配置。
     - `POST /api/config`: 更新配置（支持前端直接修改）。
-- **Frontend**: 单页应用 (SPA)，实时轮询 API 展示状态，支持深色模式 (Dark Mode)，提供可视化配置管理界面。
+- **Frontend**: 单页应用 (SPA)，通过 SSE 实时获取状态更新，支持深色模式 (Dark Mode)，提供可视化配置管理界面。
 
 ### 3. 数据持久化与缓存 (`main.rs` & `config.rs`)
 - **Config Persistence**: 配置文件 (`config.json`) 是单一数据源 (Source of Truth)。修改配置会自动保存到磁盘。

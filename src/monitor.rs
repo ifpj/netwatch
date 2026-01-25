@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio::time::{sleep, Duration, Instant};
 use chrono::Local;
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{mpsc, watch, broadcast};
 use trust_dns_resolver::TokioAsyncResolver;
 use std::net::IpAddr;
 
@@ -162,6 +162,7 @@ pub async fn start_monitor_loop(
     state: Arc<DashMap<String, MonitorStatus>>,
     tx: mpsc::Sender<MonitorEvent>,
     mut config_rx: watch::Receiver<AppConfig>,
+    broadcast_tx: broadcast::Sender<String>,
 ) {
     tracing::info!("Starting monitoring engine...");
     
@@ -196,9 +197,10 @@ pub async fn start_monitor_loop(
             let state_clone = state.clone();
             let tx_clone = tx.clone();
             let alert_config = config_rx.borrow().alert.clone();
+            let broadcast_tx_clone = broadcast_tx.clone();
 
             handles.push(tokio::spawn(async move {
-                probe_target(&state_clone, target, tx_clone, &alert_config, retention_days).await;
+                probe_target(&state_clone, target, tx_clone, &alert_config, retention_days, broadcast_tx_clone).await;
             }));
         }
         
@@ -254,12 +256,13 @@ fn hash_targets(targets: &[Target]) -> u64 {
     use std::hash::{Hash, Hasher};
     
     let mut hasher = DefaultHasher::new();
-    // 只 hash 影响探测的关键字段：id, host, port, protocol
+    // 只 hash 影响探测的关键字段：id, host, port, protocol, name
     for t in targets {
         t.id.hash(&mut hasher);
         t.host.hash(&mut hasher);
         t.port.hash(&mut hasher);
         t.protocol.hash(&mut hasher);
+        t.name.hash(&mut hasher); // Name change should also trigger status map update
         // 注意：不 hash last_known_state
     }
     hasher.finish()
@@ -271,6 +274,7 @@ async fn probe_target(
     tx: mpsc::Sender<MonitorEvent>,
     alert_config: &crate::model::AlertConfig,
     retention_days: u64,
+    broadcast_tx: broadcast::Sender<String>,
 ) {
     // 根据协议选择 Probe
     let probe_impl: Box<dyn Probe + Send + Sync> = match target.protocol {
@@ -369,6 +373,10 @@ async fn probe_target(
             // 2. 触发持久化
             let _ = tx.send(MonitorEvent::StateChanged(target.id.clone(), success)).await;
         }
+
+        // Broadcast update
+        let status_json = serde_json::to_string(entry.value()).unwrap_or_default();
+        let _ = broadcast_tx.send(status_json);
     }
 }
 

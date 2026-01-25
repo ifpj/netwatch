@@ -7,7 +7,7 @@ mod alert;
 use dashmap::DashMap;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{mpsc, watch, broadcast};
 use web::AppState;
 use std::env;
 
@@ -78,6 +78,8 @@ async fn main() {
     // 3. 创建通道
     let (monitor_tx, monitor_rx) = mpsc::channel(100);
     let (config_tx, config_rx) = watch::channel(initial_config);
+    let (broadcast_tx, _) = broadcast::channel(100);
+    let (shutdown_tx, _) = broadcast::channel(1);
 
     // 4. 启动配置持久化任务 (Config Writer)
     let persistence_map = status_map.clone();
@@ -106,8 +108,9 @@ async fn main() {
     // 5. 启动后台探测任务 (Monitor Loop)
     let monitor_map = status_map.clone();
     let monitor_config_rx = config_rx.clone();
+    let monitor_broadcast_tx = broadcast_tx.clone();
     tokio::spawn(async move {
-        monitor::start_monitor_loop(monitor_map, monitor_tx, monitor_config_rx).await;
+        monitor::start_monitor_loop(monitor_map, monitor_tx, monitor_config_rx, monitor_broadcast_tx).await;
     });
 
     // 6. 启动 Web 服务
@@ -115,6 +118,8 @@ async fn main() {
         status_map: status_map.clone(),
         config_tx,
         config_rx,
+        broadcast_tx,
+        shutdown_tx: shutdown_tx.clone(),
     };
     
     let app = web::app(app_state);
@@ -123,7 +128,7 @@ async fn main() {
     tracing::info!("Web Server listening on http://{}", addr);
     
     axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal(status_map.clone()))
+        .with_graceful_shutdown(shutdown_signal(status_map.clone(), shutdown_tx))
         .await
         .unwrap();
 }
@@ -168,7 +173,7 @@ fn load_cache(state: &DashMap<String, model::MonitorStatus>) {
     }
 }
 
-async fn shutdown_signal(state: Arc<DashMap<String, model::MonitorStatus>>) {
+async fn shutdown_signal(state: Arc<DashMap<String, model::MonitorStatus>>, shutdown_tx: broadcast::Sender<()>) {
     let ctrl_c = async {
         tokio::signal::ctrl_c()
             .await
@@ -192,6 +197,8 @@ async fn shutdown_signal(state: Arc<DashMap<String, model::MonitorStatus>>) {
     }
 
     tracing::info!("Shutdown signal received, saving cache...");
+    // Send shutdown signal to all SSE connections
+    let _ = shutdown_tx.send(());
     save_cache(&state);
     tracing::info!("Goodbye!");
 }

@@ -1,7 +1,8 @@
 let currentConfig = null;
-let updateInterval = null;
 let isSettingsOpen = false;
 let retentionDays = 3; // Default
+let monitorData = [];
+let eventSource = null;
 
 const DEFAULT_PORTS = {
     'TCP': 22,
@@ -45,20 +46,10 @@ function toggleSettings() {
 }
 
 function updateTimeRange() {
-    fetchStatus(); // Refresh immediately
+    renderDashboard(monitorData); // Refresh view with current data
 }
 
 // --- Dashboard Logic ---
-async function fetchStatus() {
-    try {
-        const res = await fetch('/api/status');
-        const data = await res.json();
-        renderDashboard(data);
-        document.getElementById('last-updated').innerText = 'Last updated: ' + new Date().toLocaleTimeString();
-    } catch (e) {
-        console.error(e);
-    }
-}
 
 function renderDashboard(data) {
     const list = document.getElementById('monitor-list');
@@ -257,12 +248,52 @@ function renderGlobalEventLog(data) {
 }
 
 function startDashboardUpdates() {
-    fetchStatus();
-    updateInterval = setInterval(fetchStatus, 3000);
+    if (eventSource) {
+        eventSource.close();
+    }
+
+    eventSource = new EventSource('/api/events');
+
+    eventSource.addEventListener('init', (e) => {
+        try {
+            monitorData = JSON.parse(e.data);
+            renderDashboard(monitorData);
+            document.getElementById('last-updated').innerText = 'Connected via SSE';
+        } catch (err) {
+            console.error('Failed to parse init data', err);
+        }
+    });
+
+    eventSource.addEventListener('update', (e) => {
+        try {
+            const updatedStatus = JSON.parse(e.data);
+            const index = monitorData.findIndex(item => item.target.id === updatedStatus.target.id);
+            if (index !== -1) {
+                monitorData[index] = updatedStatus;
+            } else {
+                // New target? or reordered? Just push it for now or reload
+                monitorData.push(updatedStatus);
+            }
+            // Re-render
+            renderDashboard(monitorData);
+            // document.getElementById('last-updated').innerText = 'Last updated: ' + new Date().toLocaleTimeString();
+        } catch (err) {
+            console.error('Failed to parse update data', err);
+        }
+    });
+
+    eventSource.onerror = (err) => {
+        console.error('SSE Error', err);
+        document.getElementById('last-updated').innerText = 'Connection lost, reconnecting...';
+        // EventSource automatically reconnects, but we might want to handle visual state
+    };
 }
 
 function stopDashboardUpdates() {
-    if (updateInterval) clearInterval(updateInterval);
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+    }
 }
 
 // --- Config Logic ---

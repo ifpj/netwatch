@@ -2,13 +2,17 @@ use axum::{
     routing::get,
     Router, Json, extract::State,
     response::IntoResponse,
+    response::sse::{Event, Sse},
     http::{header, StatusCode, Uri},
 };
 use std::sync::Arc;
 use dashmap::DashMap;
 use crate::model::{MonitorStatus, AppConfig};
-use tokio::sync::watch;
+use tokio::sync::{watch, broadcast};
 use rust_embed::RustEmbed;
+use futures::stream::Stream;
+use futures::StreamExt;
+use std::convert::Infallible;
 
 #[derive(RustEmbed)]
 #[folder = "static"]
@@ -19,11 +23,13 @@ pub struct AppState {
     pub status_map: Arc<DashMap<String, MonitorStatus>>,
     pub config_tx: watch::Sender<AppConfig>, // 用于更新配置
     pub config_rx: watch::Receiver<AppConfig>, // 用于获取当前配置
+    pub broadcast_tx: broadcast::Sender<String>, // SSE Broadcast
+    pub shutdown_tx: broadcast::Sender<()>, // Shutdown signal
 }
 
 pub fn app(state: AppState) -> Router {
     Router::new()
-        .route("/api/status", get(get_status))
+        .route("/api/events", get(sse_handler))
         .route("/api/config", get(get_config).post(update_config))
         .route("/", get(index_handler))
         .route("/index.html", get(index_handler))
@@ -53,9 +59,9 @@ async fn static_handler(uri: Uri) -> impl IntoResponse {
     }
 }
 
-async fn get_status(State(state): State<AppState>) -> Json<Vec<MonitorStatus>> {
+async fn sse_handler(State(state): State<AppState>) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    // Initial state
     let mut status_list: Vec<MonitorStatus> = state.status_map.iter().map(|v| v.value().clone()).collect();
-    // 按照配置中的顺序排序，而不是 ID 字母序，这样 UI 不会乱跳
     let config = state.config_rx.borrow();
     let order_map: std::collections::HashMap<String, usize> = config.targets.iter().enumerate().map(|(i, t)| (t.id.clone(), i)).collect();
     
@@ -65,7 +71,26 @@ async fn get_status(State(state): State<AppState>) -> Json<Vec<MonitorStatus>> {
         idx_a.cmp(idx_b)
     });
     
-    Json(status_list)
+    let initial_json = serde_json::to_string(&status_list).unwrap_or_default();
+    let initial_event = Ok(Event::default().event("init").data(initial_json));
+
+    let rx = state.broadcast_tx.subscribe();
+    let broadcast_stream = tokio_stream::wrappers::BroadcastStream::new(rx)
+        .map(|msg| {
+            match msg {
+                Ok(json) => Ok(Event::default().event("update").data(json)),
+                Err(_) => Ok(Event::default().event("error").data("stream lagged")),
+            }
+        });
+
+    let mut shutdown_rx = state.shutdown_tx.subscribe();
+    let stream = futures::stream::once(async { initial_event })
+        .chain(broadcast_stream)
+        .take_until(async move {
+            let _ = shutdown_rx.recv().await;
+        });
+    
+    Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default())
 }
 
 async fn get_config(State(state): State<AppState>) -> Json<AppConfig> {
