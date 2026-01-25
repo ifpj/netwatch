@@ -84,22 +84,6 @@ async fn main() {
     // 4. 启动配置持久化任务 (Config Writer)
     let persistence_map = status_map.clone();
     let persistence_config_tx = config_tx.clone();
-    let _persistence_config_rx = config_tx.subscribe(); // 获取一个新的 receiver
-    
-    // 修正: persistence task 需要的是 watch::Sender 来更新配置吗？
-    // 不，persistence task 接收 StateChanged 事件，然后更新文件。
-    // 为了更新文件，它需要完整的 AppConfig。
-    // 它可以通过 config_rx.borrow() 获取。
-    // 但是，我们还需要更新内存中的 Config (target.last_known_state)。
-    // watch channel 是单向的。如果我们通过 persistence task 更新了 last_known_state 并 save_config，
-    // 我们是否需要通知 monitor loop？Monitor loop 主要关心 targets 列表变更。
-    // last_known_state 变更不需要触发 monitor loop 重载。
-    // 所以 persistence task 只需要 save_config 即可。
-    
-    // 这里代码稍微调整一下，传入 config_tx 用于... 其实不需要 config_tx，只需要 save_config。
-    // 但是 monitor.rs 的签名要改一下，不要传 watch::Sender，传 watch::Receiver 即可。
-    // 等等，monitor.rs 的 config_persistence_task 签名我写的是 watch::Sender。
-    // 让我们修正它。
     
     tokio::spawn(async move {
         monitor::config_persistence_task(monitor_rx, persistence_map, persistence_config_tx).await;
