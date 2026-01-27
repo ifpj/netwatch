@@ -328,7 +328,7 @@ async fn probe_target(
         // 如果当前状态是 UP (true)，我们需要连续 3 次失败 (false) 才切换为 DOWN。
         // 如果当前状态是 DOWN (false)，我们需要连续 3 次成功 (true) 才切换为 UP。
         
-        let check_count = 3;
+        let check_count = if target.threshold == 0 { 1 } else { target.threshold as usize };
         let mut should_switch = false;
         
         if is_first_record {

@@ -327,7 +327,8 @@ function addTargetRow() {
         name: 'SSH',
         host: 'localhost',
         port: 22,
-        protocol: 'TCP'
+        protocol: 'TCP',
+        threshold: 3
     });
 }
 
@@ -350,6 +351,7 @@ function addConfigRow(target) {
         </td>
         <td><input type="text" class="c-host" value="${target.host}"></td>
         <td><input type="number" class="c-port" value="${target.port !== null ? target.port : ''}" placeholder="N/A"></td>
+        <td><input type="number" class="c-threshold" value="${target.threshold || 3}" min="1" max="20" style="width: 60px;"></td>
         <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Delete</button></td>
     `;
     tbody.appendChild(row);
@@ -427,7 +429,8 @@ async function saveConfig() {
             name: row.querySelector('.c-name').value,
             host: row.querySelector('.c-host').value,
             port: isNaN(port) ? null : port,
-            protocol: proto
+            protocol: proto,
+            threshold: parseInt(row.querySelector('.c-threshold').value) || 3
         });
     });
 

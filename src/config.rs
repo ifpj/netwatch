@@ -53,6 +53,7 @@ fn get_default_config() -> AppConfig {
                 port: Some(53),
                 name: "Google DNS (TCP)".to_string(),
                 protocol: Protocol::Tcp,
+                threshold: 3,
                 last_known_state: None,
             },
             Target {
@@ -61,6 +62,7 @@ fn get_default_config() -> AppConfig {
                 port: None,
                 name: "Cloudflare Ping".to_string(),
                 protocol: Protocol::Icmp,
+                threshold: 3,
                 last_known_state: None,
             },
              Target {
@@ -69,6 +71,7 @@ fn get_default_config() -> AppConfig {
                 port: Some(53),
                 name: "Google DNS Query".to_string(),
                 protocol: Protocol::Dns,
+                threshold: 3,
                 last_known_state: None,
             },
             Target {
@@ -77,6 +80,7 @@ fn get_default_config() -> AppConfig {
                 port: None,
                 name: "Google Web (HTTPS)".to_string(),
                 protocol: Protocol::Https,
+                threshold: 3,
                 last_known_state: None,
             },
         ],

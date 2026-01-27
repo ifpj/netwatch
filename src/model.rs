@@ -22,12 +22,16 @@ pub struct Target {
     #[serde(default = "default_proto")]
     pub protocol: Protocol,
     
+    #[serde(default = "default_threshold")]
+    pub threshold: u8,
+
     // 状态持久化
     #[serde(default)]
     pub last_known_state: Option<bool>,
 }
 
 fn default_proto() -> Protocol { Protocol::Tcp }
+fn default_threshold() -> u8 { 3 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AlertConfig {
