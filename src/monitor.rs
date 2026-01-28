@@ -74,7 +74,7 @@ static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
         .danger_accept_invalid_certs(true) // Allow self-signed certs for monitoring flexibility
         .no_gzip() // We only care about headers/status mostly
         .pool_max_idle_per_host(0) // Disable connection pooling to prevent stale connection timeouts
-        .user_agent("NetWatch/0.4.0")
+        .user_agent(concat!("NetWatch/", env!("CARGO_PKG_VERSION")))
         .build()
         .expect("Failed to build HTTP client")
 });
