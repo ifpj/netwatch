@@ -132,10 +132,7 @@ impl Probe for DnsProbe {
         ));
         
         // Create resolver
-        let resolver = match TokioAsyncResolver::tokio(config, ResolverOpts::default()) {
-             r => r,
-             // Err(e) => return (false, None, Some(format!("Resolver init failed: {}", e))),
-        };
+        let resolver = TokioAsyncResolver::tokio(config, ResolverOpts::default());
 
         // Query a stable domain (e.g., www.baidu.com)
         let query_domain = "www.baidu.com";
