@@ -1,8 +1,8 @@
-use crate::model::{AppConfig, Target, Protocol};
-use std::fs;
-use std::path::Path;
+use crate::model::{AppConfig, Protocol, Target};
 use anyhow::Context;
 use once_cell::sync::OnceCell;
+use std::fs;
+use std::path::Path;
 
 static CONFIG_PATH: OnceCell<String> = OnceCell::new();
 
@@ -13,7 +13,10 @@ pub fn init_config_path(path: String) {
 }
 
 fn get_config_path() -> &'static str {
-    CONFIG_PATH.get().map(|s| s.as_str()).unwrap_or("config.json")
+    CONFIG_PATH
+        .get()
+        .map(|s| s.as_str())
+        .unwrap_or("config.json")
 }
 
 pub fn load_config() -> anyhow::Result<AppConfig> {
@@ -29,8 +32,8 @@ pub fn load_config() -> anyhow::Result<AppConfig> {
     match serde_json::from_str::<AppConfig>(&content) {
         Ok(config) => Ok(config),
         Err(e) => {
-             // Fallback or error handling
-             anyhow::bail!("Failed to parse config file: {}", e);
+            // Fallback or error handling
+            anyhow::bail!("Failed to parse config file: {}", e);
         }
     }
 }
@@ -65,7 +68,7 @@ fn get_default_config() -> AppConfig {
                 threshold: 3,
                 last_known_state: None,
             },
-             Target {
+            Target {
                 id: "3".to_string(),
                 host: "8.8.8.8".to_string(),
                 port: Some(53),

@@ -1,13 +1,12 @@
-use crate::model::{Target, AlertConfig};
+use crate::model::{AlertConfig, Target};
 use serde_json::json;
 
 pub async fn send_alert(
-    target: &Target, 
-    is_online: bool, 
+    target: &Target,
+    is_online: bool,
     config: &AlertConfig,
-    extra_msg: Option<&str>
+    extra_msg: Option<&str>,
 ) -> anyhow::Result<()> {
-    
     if !config.enabled {
         return Ok(());
     }
@@ -19,12 +18,16 @@ pub async fn send_alert(
 
     // Generic Webhooks
     let client = reqwest::Client::new();
-    
+
     for webhook in &config.webhooks {
-        if !webhook.enabled { continue; }
-        
+        if !webhook.enabled {
+            continue;
+        }
+
         let url = &webhook.url;
-        if url.is_empty() { continue; }
+        if url.is_empty() {
+            continue;
+        }
 
         // 如果有模板，使用模板替换
         let payload = if let Some(tmpl) = &webhook.template {
@@ -34,10 +37,10 @@ pub async fn send_alert(
             body = body.replace("{{STATUS}}", status_text);
             body = body.replace("{{TIME}}", &timestamp);
             body = body.replace("{{MESSAGE}}", detail);
-            
+
             match serde_json::from_str::<serde_json::Value>(&body) {
                 Ok(v) => v,
-                Err(_) => json!({ "text": body }) // Fallback
+                Err(_) => json!({ "text": body }), // Fallback
             }
         } else {
             // 默认 JSON Payload
@@ -52,7 +55,7 @@ pub async fn send_alert(
 
         let client = client.clone();
         let url = url.clone();
-        
+
         tokio::spawn(async move {
             tracing::debug!("Sending webhook to {}", url);
             match client.post(&url).json(&payload).send().await {
@@ -72,6 +75,6 @@ pub async fn send_alert(
             }
         });
     }
-        
+
     Ok(())
 }

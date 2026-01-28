@@ -1,15 +1,15 @@
+mod alert;
 mod config;
 mod model;
 mod monitor;
 mod web;
-mod alert;
 
 use dashmap::DashMap;
-use std::sync::Arc;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use tokio::sync::{mpsc, watch, broadcast};
-use web::AppState;
 use std::env;
+use std::sync::Arc;
+use tokio::sync::{broadcast, mpsc, watch};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use web::AppState;
 
 #[tokio::main]
 async fn main() {
@@ -84,7 +84,7 @@ async fn main() {
     // 4. 启动配置持久化任务 (Config Writer)
     let persistence_map = status_map.clone();
     let persistence_config_tx = config_tx.clone();
-    
+
     tokio::spawn(async move {
         monitor::config_persistence_task(monitor_rx, persistence_map, persistence_config_tx).await;
     });
@@ -94,7 +94,13 @@ async fn main() {
     let monitor_config_rx = config_rx.clone();
     let monitor_broadcast_tx = broadcast_tx.clone();
     tokio::spawn(async move {
-        monitor::start_monitor_loop(monitor_map, monitor_tx, monitor_config_rx, monitor_broadcast_tx).await;
+        monitor::start_monitor_loop(
+            monitor_map,
+            monitor_tx,
+            monitor_config_rx,
+            monitor_broadcast_tx,
+        )
+        .await;
     });
 
     // 6. 启动 Web 服务
@@ -105,12 +111,12 @@ async fn main() {
         broadcast_tx,
         shutdown_tx: shutdown_tx.clone(),
     };
-    
+
     let app = web::app(app_state);
     let addr = "0.0.0.0:3000";
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     tracing::info!("Web Server listening on http://{}", addr);
-    
+
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal(status_map.clone(), shutdown_tx))
         .await
@@ -125,7 +131,7 @@ fn save_cache(state: &DashMap<String, model::MonitorStatus>) {
     match serde_json::to_string(&items) {
         Ok(json) => {
             if let Err(e) = std::fs::write(CACHE_FILE, json) {
-                 tracing::error!("Failed to write cache file: {}", e);
+                tracing::error!("Failed to write cache file: {}", e);
             }
         }
         Err(e) => tracing::error!("Failed to serialize cache: {}", e),
@@ -139,25 +145,28 @@ fn load_cache(state: &DashMap<String, model::MonitorStatus>) {
     tracing::info!("Loading monitor cache from {}", CACHE_FILE);
     match std::fs::read_to_string(CACHE_FILE) {
         Ok(content) => {
-             match serde_json::from_str::<Vec<model::MonitorStatus>>(&content) {
+            match serde_json::from_str::<Vec<model::MonitorStatus>>(&content) {
                 Ok(items) => {
                     for item in items {
-                         // 我们只恢复 targets 列表中存在的 target 的状态
-                         if let Some(mut existing) = state.get_mut(&item.target.id) {
-                             existing.records = item.records;
-                             existing.current_state = item.current_state;
-                             tracing::info!("Restored cache for target: {}", item.target.name);
-                         }
+                        // 我们只恢复 targets 列表中存在的 target 的状态
+                        if let Some(mut existing) = state.get_mut(&item.target.id) {
+                            existing.records = item.records;
+                            existing.current_state = item.current_state;
+                            tracing::info!("Restored cache for target: {}", item.target.name);
+                        }
                     }
                 }
                 Err(e) => tracing::error!("Failed to parse cache file: {}", e),
-             }
+            }
         }
         Err(e) => tracing::error!("Failed to read cache file: {}", e),
     }
 }
 
-async fn shutdown_signal(state: Arc<DashMap<String, model::MonitorStatus>>, shutdown_tx: broadcast::Sender<()>) {
+async fn shutdown_signal(
+    state: Arc<DashMap<String, model::MonitorStatus>>,
+    shutdown_tx: broadcast::Sender<()>,
+) {
     let ctrl_c = async {
         tokio::signal::ctrl_c()
             .await

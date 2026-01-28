@@ -1,18 +1,19 @@
+use crate::model::{AppConfig, MonitorStatus};
 use axum::{
-    routing::get,
-    Router, Json, extract::State,
-    response::IntoResponse,
-    response::sse::{Event, Sse},
+    extract::State,
     http::{header, StatusCode, Uri},
+    response::sse::{Event, Sse},
+    response::IntoResponse,
+    routing::get,
+    Json, Router,
 };
-use std::sync::Arc;
 use dashmap::DashMap;
-use crate::model::{MonitorStatus, AppConfig};
-use tokio::sync::{watch, broadcast};
-use rust_embed::RustEmbed;
 use futures::stream::Stream;
 use futures::StreamExt;
+use rust_embed::RustEmbed;
 use std::convert::Infallible;
+use std::sync::Arc;
+use tokio::sync::{broadcast, watch};
 
 #[derive(RustEmbed)]
 #[folder = "static"]
@@ -21,10 +22,10 @@ struct Assets;
 #[derive(Clone)]
 pub struct AppState {
     pub status_map: Arc<DashMap<String, MonitorStatus>>,
-    pub config_tx: watch::Sender<AppConfig>, // 用于更新配置
+    pub config_tx: watch::Sender<AppConfig>,   // 用于更新配置
     pub config_rx: watch::Receiver<AppConfig>, // 用于获取当前配置
     pub broadcast_tx: broadcast::Sender<String>, // SSE Broadcast
-    pub shutdown_tx: broadcast::Sender<()>, // Shutdown signal
+    pub shutdown_tx: broadcast::Sender<()>,    // Shutdown signal
 }
 
 pub fn app(state: AppState) -> Router {
@@ -49,7 +50,7 @@ async fn static_handler(uri: Uri) -> impl IntoResponse {
     if path.is_empty() {
         path = "index.html".to_string();
     }
-    
+
     match Assets::get(path.as_str()) {
         Some(content) => {
             let mime = mime_guess::from_path(path).first_or_octet_stream();
@@ -59,29 +60,34 @@ async fn static_handler(uri: Uri) -> impl IntoResponse {
     }
 }
 
-async fn sse_handler(State(state): State<AppState>) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+async fn sse_handler(
+    State(state): State<AppState>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     // Initial state
-    let mut status_list: Vec<MonitorStatus> = state.status_map.iter().map(|v| v.value().clone()).collect();
+    let mut status_list: Vec<MonitorStatus> =
+        state.status_map.iter().map(|v| v.value().clone()).collect();
     let config = state.config_rx.borrow();
-    let order_map: std::collections::HashMap<String, usize> = config.targets.iter().enumerate().map(|(i, t)| (t.id.clone(), i)).collect();
-    
+    let order_map: std::collections::HashMap<String, usize> = config
+        .targets
+        .iter()
+        .enumerate()
+        .map(|(i, t)| (t.id.clone(), i))
+        .collect();
+
     status_list.sort_by(|a, b| {
         let idx_a = order_map.get(&a.target.id).unwrap_or(&usize::MAX);
         let idx_b = order_map.get(&b.target.id).unwrap_or(&usize::MAX);
         idx_a.cmp(idx_b)
     });
-    
+
     let initial_json = serde_json::to_string(&status_list).unwrap_or_default();
     let initial_event = Ok(Event::default().event("init").data(initial_json));
 
     let rx = state.broadcast_tx.subscribe();
-    let broadcast_stream = tokio_stream::wrappers::BroadcastStream::new(rx)
-        .map(|msg| {
-            match msg {
-                Ok(json) => Ok(Event::default().event("update").data(json)),
-                Err(_) => Ok(Event::default().event("error").data("stream lagged")),
-            }
-        });
+    let broadcast_stream = tokio_stream::wrappers::BroadcastStream::new(rx).map(|msg| match msg {
+        Ok(json) => Ok(Event::default().event("update").data(json)),
+        Err(_) => Ok(Event::default().event("error").data("stream lagged")),
+    });
 
     let mut shutdown_rx = state.shutdown_tx.subscribe();
     let stream = futures::stream::once(async { initial_event })
@@ -89,7 +95,7 @@ async fn sse_handler(State(state): State<AppState>) -> Sse<impl Stream<Item = Re
         .take_until(async move {
             let _ = shutdown_rx.recv().await;
         });
-    
+
     Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default())
 }
 
@@ -108,13 +114,13 @@ async fn update_config(
         // First priority: Real-time status from Monitor Engine
         if let Some(entry) = state.status_map.get(&target.id) {
             target.last_known_state = Some(entry.value().current_state);
-        } 
+        }
         // Second priority: If not in map (e.g. not initialized yet), check previous config
         else if target.last_known_state.is_none() {
-             let current_config = state.config_rx.borrow();
-             if let Some(old_target) = current_config.targets.iter().find(|t| t.id == target.id) {
-                 target.last_known_state = old_target.last_known_state;
-             }
+            let current_config = state.config_rx.borrow();
+            if let Some(old_target) = current_config.targets.iter().find(|t| t.id == target.id) {
+                target.last_known_state = old_target.last_known_state;
+            }
         }
     }
 

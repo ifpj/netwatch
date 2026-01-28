@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Local};
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use uuid::Uuid;
 
@@ -16,12 +16,12 @@ pub enum Protocol {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Target {
     pub id: String,
-    pub host: String, // IP or Domain
+    pub host: String,      // IP or Domain
     pub port: Option<u16>, // ICMP 不需要端口
     pub name: String,
     #[serde(default = "default_proto")]
     pub protocol: Protocol,
-    
+
     #[serde(default = "default_threshold")]
     pub threshold: u8,
 
@@ -30,8 +30,12 @@ pub struct Target {
     pub last_known_state: Option<bool>,
 }
 
-fn default_proto() -> Protocol { Protocol::Tcp }
-fn default_threshold() -> u8 { 3 }
+fn default_proto() -> Protocol {
+    Protocol::Tcp
+}
+fn default_threshold() -> u8 {
+    3
+}
 
 impl std::hash::Hash for Target {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -84,7 +88,9 @@ pub struct AppConfig {
     pub data_retention_days: u64,
 }
 
-fn default_retention_days() -> u64 { 3 }
+fn default_retention_days() -> u64 {
+    3
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProbeRecord {
