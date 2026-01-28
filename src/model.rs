@@ -33,6 +33,27 @@ pub struct Target {
 fn default_proto() -> Protocol { Protocol::Tcp }
 fn default_threshold() -> u8 { 3 }
 
+impl std::hash::Hash for Target {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let Target {
+            id,
+            host,
+            port,
+            name,
+            protocol,
+            threshold,
+            last_known_state: _, // Explicitly ignored for hash calculation
+        } = self;
+
+        id.hash(state);
+        host.hash(state);
+        port.hash(state);
+        name.hash(state);
+        protocol.hash(state);
+        threshold.hash(state);
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AlertConfig {
     pub enabled: bool,

@@ -257,15 +257,7 @@ fn hash_targets(targets: &[Target]) -> u64 {
     use std::hash::{Hash, Hasher};
     
     let mut hasher = DefaultHasher::new();
-    // 只 hash 影响探测的关键字段：id, host, port, protocol, name
-    for t in targets {
-        t.id.hash(&mut hasher);
-        t.host.hash(&mut hasher);
-        t.port.hash(&mut hasher);
-        t.protocol.hash(&mut hasher);
-        t.name.hash(&mut hasher); // Name change should also trigger status map update
-        // 注意：不 hash last_known_state
-    }
+    targets.hash(&mut hasher); // Target now implements Hash (ignoring last_known_state)
     hasher.finish()
 }
 
