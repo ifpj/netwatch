@@ -40,19 +40,21 @@
                     <svg style="width:20px;height:20px;fill:var(--text-muted)" viewBox="0 0 24 24"><path d="M12,2C6.5,2,2,6.5,2,12s4.5,10,10,10s10-4.5,10-10S17.5,2,12,2z M13,17h-2v-2h2V17z M13,13h-2V7h2V13z"/></svg>
                     <span>Global Event Log</span>
                 </div>
-                <table class="event-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 140px;">Time</th>
-                            <th style="width: 80px;">Status</th>
-                            <th style="width: 200px;">Target</th>
-                            <th>Message</th>
-                        </tr>
-                    </thead>
-                    <tbody id="global-event-body">
-                        <!-- Events injected here -->
-                    </tbody>
-                </table>
+                <div style="overflow-x: auto;">
+                    <table class="event-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">Time</th>
+                                <th style="width: 80px;">Status</th>
+                                <th style="width: 200px;">Target</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody id="global-event-body">
+                            <!-- Events injected here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div style="text-align: right; margin-top: 16px; font-size: 0.8rem; color: var(--text-muted);" id="last-updated"></div>
