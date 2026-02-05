@@ -316,6 +316,12 @@ tr:last-child td {
   border-bottom: none;
 }
 
+/* Ensure config tables don't get squashed on mobile */
+#config-targets-table,
+#config-webhooks-table {
+  min-width: 800px;
+}
+
 input,
 select,
 textarea {
