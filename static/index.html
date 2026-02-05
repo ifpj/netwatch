@@ -1,134 +1,196 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NetWatch</title>
-    <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
+    <link rel="icon" href="/static/logo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
     <div class="container">
-        <header>
-            <div style="display: flex; align-items: center;">
-                <img src="/static/logo.svg" alt="NetWatch" style="height: 32px; width: 32px; margin-right: 12px;">
-                <h1>NetWatch</h1>
-            </div>
-            <div class="header-controls">
-                <select class="time-select" id="time-range" onchange="updateTimeRange()">
-                    <option value="60">Last 10 Minutes</option>
-                    <option value="360">Last Hour</option>
-                    <option value="2160">Last 6 Hours</option>
-                    <option value="8640">Last 24 Hours</option>
-                    <option value="retention" selected>Retention Policy</option>
-                </select>
-                <button class="config-btn" onclick="toggleSettings()" id="btn-settings" title="Settings">
-                    <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
-                </button>
-            </div>
-        </header>
+      <header>
+        <div style="display: flex; align-items: center">
+          <img
+            src="/static/logo.svg"
+            alt="NetWatch"
+            style="height: 32px; width: 32px; margin-right: 12px"
+          />
+          <h1>NetWatch</h1>
+        </div>
+        <div class="header-controls">
+          <select
+            class="time-select"
+            id="time-range"
+            onchange="updateTimeRange()"
+          >
+            <option value="60">Last 10 Minutes</option>
+            <option value="360">Last Hour</option>
+            <option value="2160">Last 6 Hours</option>
+            <option value="8640">Last 24 Hours</option>
+            <option value="retention" selected>Retention Policy</option>
+          </select>
+          <button
+            class="config-btn"
+            onclick="toggleSettings()"
+            id="btn-settings"
+            title="Settings"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
+              />
+            </svg>
+          </button>
+        </div>
+      </header>
 
-        <!-- Dashboard -->
-        <main id="view-dashboard">
-            <div id="monitor-list" class="monitor-list">
-                <!-- Items injected here -->
-            </div>
-            
-            <!-- Global Event Log -->
-            <div class="event-log-container">
-                <div class="event-log-header">
-                    <svg style="width:20px;height:20px;fill:var(--text-muted)" viewBox="0 0 24 24"><path d="M12,2C6.5,2,2,6.5,2,12s4.5,10,10,10s10-4.5,10-10S17.5,2,12,2z M13,17h-2v-2h2V17z M13,13h-2V7h2V13z"/></svg>
-                    <span>Global Event Log</span>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table class="event-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 140px;">Time</th>
-                                <th style="width: 80px;">Status</th>
-                                <th style="width: 200px;">Target</th>
-                                <th>Message</th>
-                            </tr>
-                        </thead>
-                        <tbody id="global-event-body">
-                            <!-- Events injected here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+      <!-- Dashboard -->
+      <main id="view-dashboard">
+        <div id="monitor-list" class="monitor-list">
+          <!-- Items injected here -->
+        </div>
 
-            <div style="text-align: right; margin-top: 16px; font-size: 0.8rem; color: var(--text-muted);" id="last-updated"></div>
-        </main>
+        <!-- Global Event Log -->
+        <div class="event-log-container">
+          <div class="event-log-header">
+            <svg
+              style="width: 20px; height: 20px; fill: var(--text-muted)"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M12,2C6.5,2,2,6.5,2,12s4.5,10,10,10s10-4.5,10-10S17.5,2,12,2z M13,17h-2v-2h2V17z M13,13h-2V7h2V13z"
+              />
+            </svg>
+            <span>Global Event Log</span>
+          </div>
+          <div style="overflow-x: auto">
+            <table class="event-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px">Time</th>
+                  <th style="width: 80px">Status</th>
+                  <th style="width: 200px">Target</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody id="global-event-body">
+                <!-- Events injected here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-        <!-- Settings -->
-        <main id="view-settings" class="hidden">
-            <div class="card">
-                <h2 style="margin-top: 0; font-size: 1.2rem;">Monitoring Targets</h2>
-                <div style="overflow-x: auto;">
-                    <table id="config-targets-table">
-                        <thead>
-                            <tr>
-                                <!-- ID is hidden -->
-                                <th>Name</th>
-                                <th>Protocol</th>
-                                <th>Host</th>
-                                <th style="width: 80px">Port</th>
-                                <th style="width: 80px">Threshold</th>
-                                <th style="width: 60px">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="config-targets-body">
-                            <!-- Rows -->
-                        </tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 16px;">
-                    <button class="btn btn-secondary" onclick="addTargetRow()">+ Add Target</button>
-                </div>
-            </div>
+        <div
+          style="
+            text-align: right;
+            margin-top: 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+          "
+          id="last-updated"
+        ></div>
+      </main>
 
-            <div class="card" style="margin-top: 24px;">
-                <h2 style="margin-top: 0; font-size: 1.2rem;">Alert Configuration</h2>
-                <div style="margin-bottom: 16px; color: var(--text-muted); font-size: 0.9rem;">
-                    Configure multiple notification endpoints (Webhooks, Telegram, Discord, Slack, etc.). <br>
-                    Supported template variables: <code>{{TARGET}}</code>, <code>{{HOST}}</code>, <code>{{STATUS}}</code> (🟢 UP/🔴 DOWN), <code>{{TIME}}</code>, <code>{{MESSAGE}}</code>
-                </div>
-                
-                <div style="overflow-x: auto;">
-                    <table id="config-webhooks-table" style="width: 100%;">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">On</th>
-                                <th style="width: 150px;">Name</th>
-                                <th>Webhook URL & Template</th>
-                                <th style="width: 60px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="config-webhooks-body">
-                            <!-- Rows -->
-                        </tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 16px;">
-                    <button class="btn btn-secondary" onclick="addWebhookRow()">+ Add Webhook</button>
-                </div>
-            </div>
-            
-            <div class="card" style="margin-top: 24px;">
-                 <h2 style="margin-top: 0; font-size: 1.2rem;">Data Retention</h2>
-                 <div style="display: flex; align-items: center; gap: 12px;">
-                     <label style="font-size: 0.9rem;">Keep history for (days):</label>
-                     <input type="number" id="config-retention" style="width: 80px;" min="1" max="365">
-                 </div>
-            </div>
+      <!-- Settings -->
+      <main id="view-settings" class="hidden">
+        <div class="card">
+          <h2 style="margin-top: 0; font-size: 1.2rem">Monitoring Targets</h2>
+          <div style="overflow-x: auto">
+            <table id="config-targets-table">
+              <thead>
+                <tr>
+                  <!-- ID is hidden -->
+                  <th>Name</th>
+                  <th>Protocol</th>
+                  <th>Host</th>
+                  <th style="width: 80px">Port</th>
+                  <th style="width: 80px">Threshold</th>
+                  <th style="width: 60px">Action</th>
+                </tr>
+              </thead>
+              <tbody id="config-targets-body">
+                <!-- Rows -->
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 16px">
+            <button class="btn btn-secondary" onclick="addTargetRow()">
+              + Add Target
+            </button>
+          </div>
+        </div>
 
-            <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
-                <button class="btn btn-secondary" onclick="toggleSettings()">Discard Changes</button>
-                <button class="btn btn-primary" onclick="saveConfig()">Save & Apply Configuration</button>
-            </div>
-        </main>
+        <div class="card" style="margin-top: 24px">
+          <h2 style="margin-top: 0; font-size: 1.2rem">Alert Configuration</h2>
+          <div
+            style="
+              margin-bottom: 16px;
+              color: var(--text-muted);
+              font-size: 0.9rem;
+            "
+          >
+            Configure multiple notification endpoints (Webhooks, Telegram,
+            Discord, Slack, etc.). <br />
+            Supported template variables: <code>{{TARGET}}</code>,
+            <code>{{HOST}}</code>, <code>{{STATUS}}</code> (🟢 UP/🔴 DOWN),
+            <code>{{TIME}}</code>, <code>{{MESSAGE}}</code>
+          </div>
+
+          <div style="overflow-x: auto">
+            <table id="config-webhooks-table" style="width: 100%">
+              <thead>
+                <tr>
+                  <th style="width: 40px">On</th>
+                  <th style="width: 150px">Name</th>
+                  <th>Webhook URL & Template</th>
+                  <th style="width: 60px">Action</th>
+                </tr>
+              </thead>
+              <tbody id="config-webhooks-body">
+                <!-- Rows -->
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 16px">
+            <button class="btn btn-secondary" onclick="addWebhookRow()">
+              + Add Webhook
+            </button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 24px">
+          <h2 style="margin-top: 0; font-size: 1.2rem">Data Retention</h2>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <label style="font-size: 0.9rem">Keep history for (days):</label>
+            <input
+              type="number"
+              id="config-retention"
+              style="width: 80px"
+              min="1"
+              max="365"
+            />
+          </div>
+        </div>
+
+        <div
+          style="
+            margin-top: 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+          "
+        >
+          <button class="btn btn-secondary" onclick="toggleSettings()">
+            Discard Changes
+          </button>
+          <button class="btn btn-primary" onclick="saveConfig()">
+            Save & Apply Configuration
+          </button>
+        </div>
+      </main>
     </div>
 
     <script src="/static/js/app.js"></script>
-</body>
+  </body>
 </html>

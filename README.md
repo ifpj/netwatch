@@ -7,29 +7,33 @@
 本项目采用异步并发模型（Tokio），主要由以下几个核心模块组成：
 
 ### 1. 核心监控模块 (`monitor.rs`)
+
 - **Probe Loop**: 主循环定期遍历所有监控目标 (Target)。
 - **并发探测**: 针对每个目标启动异步任务进行探测 (TCP connect, ICMP ping, DNS query, HTTP/HTTPS request)。
 - **状态管理**: 使用 `DashMap` (线程安全的 HashMap) 存储所有目标的实时状态 (`MonitorStatus`)。
-- **状态确认机制**: 
-    - 首次启动时立即确认状态。
-    - 状态变更（UP <-> DOWN）需要经过多次探测确认（防抖动）。
+- **状态确认机制**:
+  - 首次启动时立即确认状态。
+  - 状态变更（UP <-> DOWN）需要经过多次探测确认（防抖动）。
 - **配置热重载**: 监听配置文件变化，通过 Hash 比对智能更新监控列表，避免不必要的重启。
 
 ### 2. Web 服务模块 (`web.rs` & Frontend)
+
 - **Axum Server**: 提供 HTTP API 和静态文件服务（嵌入式静态资源）。
 - **API**:
-    - `GET /api/events`: SSE 实时事件流（初始状态 + 实时更新）。
-    - `GET /api/config`: 获取当前配置。
-    - `POST /api/config`: 更新配置（支持前端直接修改）。
+  - `GET /api/events`: SSE 实时事件流（初始状态 + 实时更新）。
+  - `GET /api/config`: 获取当前配置。
+  - `POST /api/config`: 更新配置（支持前端直接修改）。
 - **Frontend**: 单页应用 (SPA)，通过 SSE 实时获取状态更新，支持深色模式 (Dark Mode)，提供可视化配置管理界面。
 
 ### 3. 数据持久化与缓存 (`main.rs` & `config.rs`)
+
 - **Config Persistence**: 配置文件 (`config.json`) 是单一数据源 (Source of Truth)。修改配置会自动保存到磁盘。
-- **Cache System**: 
-    - **Graceful Shutdown**: 程序接收到终止信号 (SIGINT/SIGTERM) 时，会将当前的监控状态（如历史延迟数据、当前状态）序列化保存到 `cache.json`。
-    - **Restore**: 下次启动时优先加载缓存，恢复之前的监控上下文，避免数据断层。
+- **Cache System**:
+  - **Graceful Shutdown**: 程序接收到终止信号 (SIGINT/SIGTERM) 时，会将当前的监控状态（如历史延迟数据、当前状态）序列化保存到 `cache.json`。
+  - **Restore**: 下次启动时优先加载缓存，恢复之前的监控上下文，避免数据断层。
 
 ### 4. 告警模块 (`alert.rs`)
+
 - **Webhook**: 支持配置多个 Webhook 端点，当目标状态发生确认变更时，异步发送 HTTP POST 请求。
 - **Template**: 支持自定义 JSON 告警模版，支持变量替换（如 `{{TARGET}}`, `{{STATUS}}` 等）。
 - **Retry**: 内置简单的错误重试和详细的日志记录。
@@ -39,10 +43,11 @@
 本项目提供了 `Makefile` 以简化多架构编译。
 
 ### 前置要求
+
 - Rust (Cargo)
 - **交叉编译工具链**:
-    - x86_64 musl: 需要 `x86_64-linux-gcc`
-    - AArch64 musl: 需要 `aarch64-linux-gcc`
+  - x86_64 musl: 需要 `x86_64-linux-gcc`
+  - AArch64 musl: 需要 `aarch64-linux-gcc`
 
 ### 常用命令
 
@@ -93,6 +98,7 @@ make aarch64
 ## 运行
 
 直接运行：
+
 ```bash
 ./netwatch
 ```
@@ -103,6 +109,7 @@ make aarch64
 - `-c <config_path>`: 指定配置文件路径（覆盖默认的 `config.json`）。
 
 示例：
+
 ```bash
 # 指定工作目录
 ./netwatch -d /opt/netwatch
@@ -112,4 +119,3 @@ make aarch64
 ```
 
 日志级别可通过 `RUST_LOG` 环境变量控制，默认为 `info`。
-
